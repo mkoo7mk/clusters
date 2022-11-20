@@ -270,7 +270,6 @@ void print_clusters(struct cluster_t *carr, int narr)
 int main(int argc, char *argv[])
 {
     struct cluster_t *clusters;
-
     /*
     Open file
     Read how many points
@@ -284,7 +283,17 @@ int main(int argc, char *argv[])
     Done
     Go to sleep
     */
-   fopen("clusters.txt", "r"); 
+    
+    int char_buffer;
+    
+    FILE *file;
+    file = fopen("clusters.txt", "r");
+    if (file) {
+        while ((char_buffer = getc(file)) != EOF){
 
+        }
+        fclose(file);
+    }
+    
    return 0;
 }
