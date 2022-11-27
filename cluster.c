@@ -5,6 +5,7 @@
  * Single linkage
  */
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h> // sqrtf
@@ -86,7 +87,9 @@ void init_cluster(struct cluster_t *c, int cap)
     assert(c != NULL);
     assert(cap >= 0);
 
-    // TODO
+    // TODO robil som
+    c->capacity = cap;
+    c->obj = malloc(sizeof(struct obj_t) * cap);
 
 }
 
@@ -95,7 +98,11 @@ void init_cluster(struct cluster_t *c, int cap)
  */
 void clear_cluster(struct cluster_t *c)
 {
-    // TODO
+    // TODO robil som
+    free(c->obj);
+    c->capacity = 0;
+    c->size = 0;
+    c = NULL;
 }
 
 /// Chunk of cluster objects. Value recommended for reallocation.
@@ -269,7 +276,7 @@ void print_clusters(struct cluster_t *carr, int narr)
 
 int main(int argc, char *argv[])
 {
-    struct cluster_t *clusters;
+    struct cluster_t **clusters;
     /*
     Open file
     Read how many points
@@ -285,15 +292,40 @@ int main(int argc, char *argv[])
     */
     
     int char_buffer;
-    
-    FILE *file;
-    file = fopen("clusters.txt", "r");
-    if (file) {
-        while ((char_buffer = getc(file)) != EOF){
+    int num_of_points = 0;
+    char str_buffer[20];
+    char str_points_buffer[10];
 
+    clusters = malloc(sizeof(struct cluster_t) * atoi(argv[2]));
+
+    FILE *file;
+
+    if(argc == 3){
+        // Open file
+        file = fopen(argv[1], "r");
+        if (file) {
+            // Read how many points in file
+            char_buffer = fscanf(file, "%s", str_buffer);
+            // Ask if it contains =
+            char *temp = strchr(str_buffer, '=');
+            if (temp == NULL){
+                // There is no =
+                fclose(file);
+                num_of_points = 1;
+                file = fopen(argv[1], "r");
+            }
+            else
+            {
+                for (int i = 1; temp[i] != '\0'; i++)
+                    str_points_buffer[i-1] = temp[i];
+                num_of_points = atoi(str_points_buffer);
+            }
         }
+        for (int i = 0; i < num_of_points; i++){
+            init_cluster(clusters[i], 0);
+        }
+        printf("Hello %s and number of points = %d\n", strchr(str_buffer, '='), num_of_points);
         fclose(file);
     }
-    
-   return 0;
+    return 0;
 }
