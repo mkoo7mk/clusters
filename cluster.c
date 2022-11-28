@@ -88,8 +88,11 @@ void init_cluster(struct cluster_t *c, int cap)
     assert(cap >= 0);
 
     // TODO robil som
+    size_t size = sizeof(struct obj_t) * cap;
+    void *arr = realloc(c->obj, size);
+
+    c->obj = (struct obj_t*)arr;
     c->capacity = cap;
-    c->obj = malloc(sizeof(struct obj_t) * cap);
 
 }
 
@@ -100,9 +103,9 @@ void clear_cluster(struct cluster_t *c)
 {
     // TODO robil som
     free(c->obj);
+    c->obj = NULL;
     c->capacity = 0;
     c->size = 0;
-    c = NULL;
 }
 
 /// Chunk of cluster objects. Value recommended for reallocation.
@@ -139,6 +142,9 @@ struct cluster_t *resize_cluster(struct cluster_t *c, int new_cap)
 void append_cluster(struct cluster_t *c, struct obj_t obj)
 {
     // TODO
+    c = resize_cluster(c, c->capacity + 1);
+    c->size++;
+    c->obj[c->capacity-1] = obj;
 }
 
 /*
@@ -276,7 +282,7 @@ void print_clusters(struct cluster_t *carr, int narr)
 
 int main(int argc, char *argv[])
 {
-    struct cluster_t **clusters;
+    struct cluster_t *clusters;
     /*
     Open file
     Read how many points
@@ -296,6 +302,7 @@ int main(int argc, char *argv[])
     char str_buffer[20];
     char str_points_buffer[10];
 
+    struct obj_t temp_obj;
     clusters = malloc(sizeof(struct cluster_t) * atoi(argv[2]));
 
     FILE *file;
@@ -320,12 +327,21 @@ int main(int argc, char *argv[])
                     str_points_buffer[i-1] = temp[i];
                 num_of_points = atoi(str_points_buffer);
             }
+            for (int i = 0; i < atoi(argv[2]); i++){
+                init_cluster(clusters, 0);
+            }
+            for (int i = 0; i < num_of_points; i++){
+                fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
+                append_cluster(&clusters[0], temp_obj);
+            }
+            print_clusters(clusters, atoi(argv[2]));
         }
-        for (int i = 0; i < num_of_points; i++){
-            init_cluster(clusters[i], 0);
-        }
-        printf("Hello %s and number of points = %d\n", strchr(str_buffer, '='), num_of_points);
         fclose(file);
     }
+
+    for (int i = 0; i < atoi(argv[2]); i++){
+        clear_cluster(clusters);
+    }
+    free(clusters);
     return 0;
 }
