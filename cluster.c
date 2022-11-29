@@ -325,6 +325,7 @@ int main(int argc, char *argv[])
     char str_buffer[20];
     char str_points_buffer[10];
 
+    struct obj_t *parr;  
     struct obj_t temp_obj;
     clusters = malloc(sizeof(struct cluster_t) * atoi(argv[2]));
 
@@ -350,19 +351,52 @@ int main(int argc, char *argv[])
                     str_points_buffer[i-1] = temp[i];
                 num_of_points = atoi(str_points_buffer);
             }
-            for (int i = 0; i < atoi(argv[2]); i++){
-                init_cluster(clusters, 0);
-            }
+            // for (int i = 0; i < atoi(argv[2]); i++){
+            //     init_cluster(clusters, 0);
+            // }  
             for (int i = 0; i < num_of_points; i++){
                 fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
-                append_cluster(&clusters[0], temp_obj);
+                parr[i] = temp_obj;
             }
-            merge_clusters(&clusters[1], &clusters[0]);
-            print_clusters(clusters, atoi(argv[2]));
-        }
         fclose(file);
+        }
     }
-
+    // Add all points to some clusters
+    int num_clusters = 0;
+    int was_there = 0;
+    init_cluster(clusters, 0);
+    append_cluster(&clusters[0], parr[0]);
+    num_clusters++;
+    float minimum, temp;
+    for (int i = 0; i < num_of_points; i++){
+        minimum = INFINITY;
+        for(int j = 0; j < num_of_points; j++){
+            if (i != j){
+                temp = obj_distance(&parr[i], &parr[j]);
+                if (temp < minimum){
+                    minimum = temp;
+                    temp_obj = parr[j];
+                }
+            }
+        }
+        for(int j = 0; j < num_clusters && !was_there; j++){
+            for(int k = 0; k < clusters[j].size; k++){
+                if (clusters[j].obj[k].id == parr[i].id){
+                    append_cluster(&clusters[j], temp_obj);
+                    was_there = 1;
+                    break;
+                }
+            }
+        }
+        if (!was_there){
+            init_cluster(clusters, 0);
+            num_clusters++;
+            append_cluster(&clusters[num_clusters], temp_obj);
+        }
+    }
+    append_cluster(&clusters[0], temp_obj);
+    merge_clusters(&clusters[1], &clusters[0]);
+    print_clusters(clusters, atoi(argv[2]));
     for (int i = 0; i < atoi(argv[2]); i++){
         clear_cluster(clusters);
     }
