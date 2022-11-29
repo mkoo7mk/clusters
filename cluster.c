@@ -144,6 +144,8 @@ void append_cluster(struct cluster_t *c, struct obj_t obj)
     // TODO
     c = resize_cluster(c, c->capacity + 1);
     c->size++;
+    if (c->capacity < c->size)
+        c->capacity++;
     c->obj[c->capacity-1] = obj;
 }
 
@@ -163,6 +165,10 @@ void merge_clusters(struct cluster_t *c1, struct cluster_t *c2)
     assert(c2 != NULL);
 
     // TODO
+    for(int i = 0; i < c2->size; i++){
+        append_cluster(c1, c2->obj[i]);
+    }
+    sort_cluster(c1);
 }
 
 /**********************************************************************/
@@ -190,6 +196,7 @@ float obj_distance(struct obj_t *o1, struct obj_t *o2)
     assert(o2 != NULL);
 
     // TODO
+    return powf(o1->x - o2->x, 2) + powf(o1->y-o2->y, 2);
 }
 
 /*
@@ -201,8 +208,16 @@ float cluster_distance(struct cluster_t *c1, struct cluster_t *c2)
     assert(c1->size > 0);
     assert(c2 != NULL);
     assert(c2->size > 0);
-
-    // TODO
+    float min = INFINITY;
+    float temp;
+    for (int i = 0; i < c1->size; i++){
+        for (int j = 0; j < c2->size; j++){
+            temp = obj_distance(&c1->obj[i], &c2->obj[j]);
+            if (temp < min)
+                min = temp;
+        }
+    }
+    return min;
 }
 
 /*
@@ -214,7 +229,15 @@ float cluster_distance(struct cluster_t *c1, struct cluster_t *c2)
 void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 {
     assert(narr > 0);
-
+    float min = INFINITY;
+    float temp;
+    for (int i = 0; i < narr - 1; i++){
+        for (int j = i + 1; j < narr; j++){
+            temp = cluster_distance(&carr[i], &carr[j]);
+            if (temp < min)
+                min = temp;
+        }
+    }
     // TODO
 }
 
@@ -334,6 +357,7 @@ int main(int argc, char *argv[])
                 fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
                 append_cluster(&clusters[0], temp_obj);
             }
+            merge_clusters(&clusters[1], &clusters[0]);
             print_clusters(clusters, atoi(argv[2]));
         }
         fclose(file);
