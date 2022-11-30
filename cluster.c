@@ -185,8 +185,8 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
     assert(narr > 0);
 
     // TODO
-    clear_cluster(&carr[idx]);
-    for (int i = idx; i <= narr; i++){
+    for (int i = idx; i <= narr - 1; i++){
+        clear_cluster(&carr[i]);
         merge_clusters(&carr[i], &carr[i+1]);
     }
     clear_cluster(&carr[narr - 1]);
@@ -362,20 +362,20 @@ int main(int argc, char *argv[])
     Done
     Go to sleep
     */
-    int num_of_clusters;
+    int temp_c1_index, temp_c2_index;
+    float num_of_clusters;
     if (argc == 3){
         num_of_clusters = load_clusters(argv[1], &clusters);
-    }
-    // int desired_num_of_clusters = atoi(argv[2]);
-    // num_of_clusters = remove_cluster(clusters, num_of_clusters, 2);
-    printf("I am number of clusters: %d", num_of_clusters);
-    // while (num_of_clusters != desired_num_of_clusters){
-    //     printf("I am number of clusters: %d", num_of_clusters);
-    //     num_of_clusters = remove_cluster(clusters, num_of_clusters, 2);
-    // }
-    print_clusters(clusters, num_of_clusters);
-    for (int i = 0; i < num_of_clusters; i++){
-        clear_cluster(&clusters[i]);
+        int desired_num_of_clusters = atoi(argv[2]);
+        while (num_of_clusters != desired_num_of_clusters){
+            find_neighbours(clusters, num_of_clusters, &temp_c1_index, &temp_c2_index);
+            merge_clusters(&clusters[temp_c1_index], &clusters[temp_c2_index]);
+            num_of_clusters = remove_cluster(clusters, num_of_clusters, temp_c2_index);
+        }
+        print_clusters(clusters, num_of_clusters);
+        for (int i = 0; i < num_of_clusters; i++){
+            clear_cluster(&clusters[i]);
+        }
     }
     free(clusters);
     return 0;
