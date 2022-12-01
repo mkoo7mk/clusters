@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
-
+#include <errno.h>
 
 // gcc -std=c99 -Wall -Wextra -Werror -DNDEBUG cluster.c -o cluster -lm
 // ./cluster SOUBOR 5
@@ -90,7 +90,8 @@ void init_cluster(struct cluster_t *c, int cap)
     // TODO robil som
     size_t size = sizeof(struct obj_t) * cap;
     void *arr = malloc(size);
-
+    if (arr == NULL)
+        return;
     c->obj = (struct obj_t*)arr;
     c->size = 0;
     c->capacity = cap;
@@ -202,7 +203,7 @@ float obj_distance(struct obj_t *o1, struct obj_t *o2)
     assert(o2 != NULL);
 
     // TODO
-    return powf(o1->x - o2->x, 2) + powf(o1->y-o2->y, 2);
+    return sqrtf(powf(o1->x - o2->x, 2) + powf(o1->y-o2->y, 2)); // No need to use sqrtf but oh well I must
 }
 
 /*
@@ -295,40 +296,57 @@ void print_cluster(struct cluster_t *c)
 int load_clusters(char *filename, struct cluster_t **arr)
 {
     assert(arr != NULL);
-
+    const unsigned int NUM_OF_OBJ_PARAMS = 3;
     // TODO
 
     int num_of_points = 0;
     char str_buffer[20];
     char str_points_buffer[10];
+    int loaded_params;
 
     FILE *file;
     struct obj_t temp_obj;
     // Open file
     file = fopen(filename, "r");
-    if (file) {
-        // Read how many points in file
-        fscanf(file, "%s", str_buffer);
-        // Ask if it contains =
-        char *temp = strchr(str_buffer, '=');
-        if (temp == NULL){
-            // There is no =
-            fclose(file);
-            num_of_points = 1;
-            file = fopen(filename, "r");
-        }
-        else{                
-            for (int i = 1; temp[i] != '\0'; i++)
-                    str_points_buffer[i-1] = temp[i];
-                num_of_points = atoi(str_points_buffer);
-        }
+    if (file == NULL) {
+        // Can not open file
+        *arr = NULL;
+        return -1;
+    }
+    // Read how many points in file
+    fscanf(file, "%s", str_buffer);
+    // Ask if it contains =
+    char *temp = strchr(str_buffer, '=');
+    if (temp == NULL){  // There is no =
+        fclose(file);
+        *arr = NULL;
+        return -1;
+    }
 
-        *arr = malloc(sizeof(struct cluster_t) * num_of_points);
-        for (int i = 0; i < num_of_points; i++){
-            fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
-            init_cluster(&(*arr)[i], 0);
-            append_cluster(&(*arr)[i], temp_obj);
+    for (int i = 1; temp[i] != '\0'; i++)
+        str_points_buffer[i-1] = temp[i];
+    num_of_points = atoi(str_points_buffer);
+    if (num_of_points <= 0){ // If atoi does not return valid value
+        *arr = NULL;
+        fclose(file);
+        return -1;
+    }
+
+    if (*arr = malloc(sizeof(struct cluster_t) * num_of_points) == NULL){ // No space for malloc
+        *arr = NULL;
+        fclose(file);
+        return -1;
+    }
+
+    for (int i = 0; i < num_of_points; i++){
+        loaded_params = fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
+        if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x >= 0 || temp_obj.y >= 0 || temp_obj.id >= 0){
+            *arr = NULL;
+            fclose(file);
+            return -1;
         }
+        init_cluster(&(*arr)[i], 0);
+        append_cluster(&(*arr)[i], temp_obj);
     }
     fclose(file);
     return num_of_points;
@@ -348,34 +366,48 @@ void print_clusters(struct cluster_t *carr, int narr)
     }
 }
 
-int main(int argc, char *argv[])
-{
-    struct cluster_t *clusters;
-    /*
-    Open file
-    Read how many points
-    allocate memmory for points
-    Make the clusters:
-        Connect closest points
-        Check, how many clusters exist, we need to connect two clusters using closest point
-    Print the outcome as said in the assignment
-    Done
-    Go to sleep
-    */
-    int temp_c1_index, temp_c2_index;
-    float num_of_clusters;
+/*
+ Verifies arguments, sets desired number of clusters
+ If failed then it sets the value to 0
+*/
+void check_arguments(int argc, char *argv[], int *desired_num_of_clusters){
     if (argc == 3){
-        num_of_clusters = load_clusters(argv[1], &clusters);
-        int desired_num_of_clusters = atoi(argv[2]);
-        while (num_of_clusters != desired_num_of_clusters){
-            find_neighbours(clusters, num_of_clusters, &temp_c1_index, &temp_c2_index);
-            merge_clusters(&clusters[temp_c1_index], &clusters[temp_c2_index]);
-            num_of_clusters = remove_cluster(clusters, num_of_clusters, temp_c2_index);
-        }
-        print_clusters(clusters, num_of_clusters);
-        for (int i = 0; i < num_of_clusters; i++){
-            clear_cluster(&clusters[i]);
-        }
+        *desired_num_of_clusters = atoi(argv[2]);
+        return;
+    }
+    if (argc == 2){
+        *desired_num_of_clusters = 1;
+        return;
+    }
+    *desired_num_of_clusters = 0;
+}
+int main(int argc, char *argv[]){
+    struct cluster_t *clusters;
+    int temp_c1_index, temp_c2_index;
+    int desired_num_of_clusters;
+    float num_of_clusters;
+
+    check_arguments(argc, argv, &desired_num_of_clusters);
+
+    if (!desired_num_of_clusters){
+        fprintf(stderr, "Invalid arguments");
+        return -1;
+    }
+
+    num_of_clusters = load_clusters(argv[1], &clusters);
+    if (num_of_clusters < 1){
+        fprintf(stderr, "Invalid arguments");
+        return -1;
+    }
+    
+    while (num_of_clusters != desired_num_of_clusters){
+        find_neighbours(clusters, num_of_clusters, &temp_c1_index, &temp_c2_index);
+        merge_clusters(&clusters[temp_c1_index], &clusters[temp_c2_index]);
+        num_of_clusters = remove_cluster(clusters, num_of_clusters, temp_c2_index);
+    }
+    print_clusters(clusters, num_of_clusters);
+    for (int i = 0; i < num_of_clusters; i++){
+        clear_cluster(&clusters[i]);
     }
     free(clusters);
     return 0;
