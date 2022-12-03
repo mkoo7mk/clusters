@@ -347,9 +347,9 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
     for (int i = 0; i < num_of_points; i++){
         loaded_params = fscanf(file, "%d %d %d", &temp_obj.id, &temp_obj.x, &temp_obj.y);
-        // temp_obj.id = (int)temp_obj.id;
-        // temp_obj.x = (int)temp_obj.x;
-        // temp_obj.y = (int)temp_obj.y;
+        temp_obj.id = (int)temp_obj.id;
+        temp_obj.x = (int)temp_obj.x;
+        temp_obj.y = (int)temp_obj.y;
         if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x < 0 || temp_obj.x > 1000 || temp_obj.y < 0 || temp_obj.y > 1000 || temp_obj.id < 0 || !uniqueID(*arr, i, temp_obj.id)){
             *arr = NULL;
             fclose(file);
