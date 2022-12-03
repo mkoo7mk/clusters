@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
 #include <errno.h>
@@ -286,6 +287,32 @@ void print_cluster(struct cluster_t *c)
     putchar('\n');
 }
 
+int occurenceInString(char *haystack, char needle){
+    int occurencies = 0;
+    for (int i = 0; i < (int) strlen(haystack); i++){
+        if (haystack[i] == needle)
+            occurencies++;
+    }
+    return occurencies;
+}
+
+int validateFile(char *filename){
+    FILE *file;
+    file = fopen(filename, "r");
+
+    if (file == NULL)
+        return -1;
+
+    char str_buffer[20];
+    while (fgets(str_buffer, 20, file) != NULL){
+        if (strchr(str_buffer, '.') || (occurenceInString(str_buffer, ' ') != 2 && !strchr(str_buffer, '='))){
+            fclose(file);
+            return 0;
+        }
+    }
+    fclose(file);
+    return 1;
+}
 
 int uniqueID(struct cluster_t *arr, int arr_len, int id){
     for (int i = 0; i < arr_len; i++){
@@ -346,10 +373,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
     }
 
     for (int i = 0; i < num_of_points; i++){
-        loaded_params = fscanf(file, "%d %d %d", &temp_obj.id, &temp_obj.x, &temp_obj.y);
-        temp_obj.id = (int)temp_obj.id;
-        temp_obj.x = (int)temp_obj.x;
-        temp_obj.y = (int)temp_obj.y;
+        loaded_params = fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
         if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x < 0 || temp_obj.x > 1000 || temp_obj.y < 0 || temp_obj.y > 1000 || temp_obj.id < 0 || !uniqueID(*arr, i, temp_obj.id)){
             *arr = NULL;
             fclose(file);
@@ -380,28 +404,43 @@ void print_clusters(struct cluster_t *carr, int narr)
  Verifies arguments, sets desired number of clusters
  If failed then it sets the value to 0
 */
-void check_arguments(int argc, char *argv[], int *desired_num_of_clusters){
+int check_arguments(int argc, char *argv[], int *desired_num_of_clusters){
     if (argc == 3){
-        char *rest;
-        *desired_num_of_clusters = (int) strtol(argv[2], &rest, 10);
-        return;
+        for (int i = 0; i < (int) strlen(argv[2]); i++){
+            if (!isdigit(argv[2][i]))
+                return 0;
+        }
+        *desired_num_of_clusters = atoi(argv[2]);
+        if (*desired_num_of_clusters == 0)
+            return 0;
+        return 1;
     }
     if (argc == 2){
         *desired_num_of_clusters = 1;
-        return;
+        return 1;
     }
     *desired_num_of_clusters = 0;
+    return 0;
 }
+
 int main(int argc, char *argv[]){
     struct cluster_t *clusters;
     int temp_c1_index, temp_c2_index;
     int desired_num_of_clusters;
     float num_of_clusters;
 
-    check_arguments(argc, argv, &desired_num_of_clusters);
+    if(!check_arguments(argc, argv, &desired_num_of_clusters)){
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
 
     if (!desired_num_of_clusters){
         fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    if (!validateFile(argv[1])){
+        fprintf(stderr, "Wrong input file\n");
         return -1;
     }
 
