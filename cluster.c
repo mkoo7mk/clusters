@@ -286,6 +286,14 @@ void print_cluster(struct cluster_t *c)
     putchar('\n');
 }
 
+
+int uniqueID(struct cluster_t *arr, int arr_len, int id){
+    for (int i = 0; i < arr_len; i++){
+        if (arr[i].obj->id == id)
+            return 0;
+    }
+    return 1;
+}
 /*
  Ze souboru 'filename' nacte objekty. Pro kazdy objekt vytvori shluk a ulozi
  jej do pole shluku. Alokuje prostor pro pole vsech shluku a ukazatel na prvni
@@ -296,7 +304,7 @@ void print_cluster(struct cluster_t *c)
 int load_clusters(char *filename, struct cluster_t **arr)
 {
     assert(arr != NULL);
-    const unsigned int NUM_OF_OBJ_PARAMS = 3;
+    const int NUM_OF_OBJ_PARAMS = 3;
     // TODO
 
     int num_of_points = 0;
@@ -330,17 +338,19 @@ int load_clusters(char *filename, struct cluster_t **arr)
         *arr = NULL;
         fclose(file);
         return -1;
-    }
-
-    if (*arr = malloc(sizeof(struct cluster_t) * num_of_points) == NULL){ // No space for malloc
-        *arr = NULL;
+    }   
+    
+    if ((*arr = malloc(sizeof(struct cluster_t) * num_of_points)) == NULL){ // No space for malloc
         fclose(file);
         return -1;
     }
 
     for (int i = 0; i < num_of_points; i++){
-        loaded_params = fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
-        if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x >= 0 || temp_obj.y >= 0 || temp_obj.id >= 0){
+        loaded_params = fscanf(file, "%d %d %d", &temp_obj.id, &temp_obj.x, &temp_obj.y);
+        // temp_obj.id = (int)temp_obj.id;
+        // temp_obj.x = (int)temp_obj.x;
+        // temp_obj.y = (int)temp_obj.y;
+        if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x < 0 || temp_obj.x > 1000 || temp_obj.y < 0 || temp_obj.y > 1000 || temp_obj.id < 0 || !uniqueID(*arr, i, temp_obj.id)){
             *arr = NULL;
             fclose(file);
             return -1;
@@ -372,7 +382,8 @@ void print_clusters(struct cluster_t *carr, int narr)
 */
 void check_arguments(int argc, char *argv[], int *desired_num_of_clusters){
     if (argc == 3){
-        *desired_num_of_clusters = atoi(argv[2]);
+        char *rest;
+        *desired_num_of_clusters = (int) strtol(argv[2], &rest, 10);
         return;
     }
     if (argc == 2){
@@ -390,13 +401,13 @@ int main(int argc, char *argv[]){
     check_arguments(argc, argv, &desired_num_of_clusters);
 
     if (!desired_num_of_clusters){
-        fprintf(stderr, "Invalid arguments");
+        fprintf(stderr, "Invalid arguments\n");
         return -1;
     }
 
     num_of_clusters = load_clusters(argv[1], &clusters);
     if (num_of_clusters < 1){
-        fprintf(stderr, "Invalid arguments");
+        fprintf(stderr, "Invalid arguments\n");
         return -1;
     }
     
