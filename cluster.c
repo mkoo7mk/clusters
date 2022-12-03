@@ -83,12 +83,11 @@ struct cluster_t {
  Inicializace shluku 'c'. Alokuje pamet pro cap objektu (kapacitu).
  Ukazatel NULL u pole objektu znamena kapacitu 0.
 */
-void init_cluster(struct cluster_t *c, int cap)
-{
+void init_cluster(struct cluster_t *c, int cap){
     assert(c != NULL);
     assert(cap >= 0);
 
-    // TODO robil som
+    // TODO
     size_t size = sizeof(struct obj_t) * cap;
     void *arr = malloc(size);
     if (arr == NULL)
@@ -102,8 +101,7 @@ void init_cluster(struct cluster_t *c, int cap)
 /*
  Odstraneni vsech objektu shluku a inicializace na prazdny shluk.
  */
-void clear_cluster(struct cluster_t *c)
-{
+void clear_cluster(struct cluster_t *c){
     // TODO
     if(c->capacity)
         free(c->obj);
@@ -289,7 +287,7 @@ void print_cluster(struct cluster_t *c)
 
 int occurenceInString(char *haystack, char needle){
     int occurencies = 0;
-    for (int i = 0; i < (int) strlen(haystack); i++){
+    for (int i = 0; haystack[i] != '\0'; i++){
         if (haystack[i] == needle)
             occurencies++;
     }
@@ -360,7 +358,11 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
     for (int i = 1; temp[i] != '\0'; i++)
         str_points_buffer[i-1] = temp[i];
+    
+    // char *rest;
+    // num_of_points = (int) strtol(str_buffer, &rest, 10);
     num_of_points = atoi(str_points_buffer);
+
     if (num_of_points <= 0){ // If atoi does not return valid value
         *arr = NULL;
         fclose(file);
@@ -406,7 +408,7 @@ void print_clusters(struct cluster_t *carr, int narr)
 */
 int check_arguments(int argc, char *argv[], int *desired_num_of_clusters){
     if (argc == 3){
-        for (int i = 0; i < (int) strlen(argv[2]); i++){
+        for (int i = 0; argv[2][i] != '\0'; i++){
             if (!isdigit(argv[2][i]))
                 return 0;
         }
@@ -447,6 +449,10 @@ int main(int argc, char *argv[]){
     num_of_clusters = load_clusters(argv[1], &clusters);
     if (num_of_clusters < 1){
         fprintf(stderr, "Invalid arguments\n");
+        for (int i = 0; i < num_of_clusters; i++){
+            clear_cluster(&clusters[i]);
+        }
+        free(clusters);
         return -1;
     }
     
