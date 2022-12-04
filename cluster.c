@@ -334,9 +334,9 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
     int num_of_points = 0;
     char str_buffer[20];
-    char str_points_buffer[10];
+    // char str_points_buffer[20];
     int loaded_params;
-
+    // int i;
     FILE *file;
     struct obj_t temp_obj;
     // Open file
@@ -355,21 +355,15 @@ int load_clusters(char *filename, struct cluster_t **arr)
         *arr = NULL;
         return -1;
     }
-
-    for (int i = 1; temp[i] != '\0'; i++)
-        str_points_buffer[i-1] = temp[i];
-    
-    // char *rest;
-    // num_of_points = (int) strtol(str_buffer, &rest, 10);
-    num_of_points = atoi(str_points_buffer);
+    num_of_points = atoi(temp + 1);
 
     if (num_of_points <= 0){ // If atoi does not return valid value
         *arr = NULL;
         fclose(file);
         return -1;
     }   
-    
-    if ((*arr = malloc(sizeof(struct cluster_t) * num_of_points)) == NULL){ // No space for malloc
+    *arr = malloc(sizeof(struct cluster_t) * num_of_points * CLUSTER_CHUNK);
+    if (arr == NULL){ // No space for malloc
         fclose(file);
         return -1;
     }
@@ -428,7 +422,7 @@ int check_arguments(int argc, char *argv[], int *desired_num_of_clusters){
 int main(int argc, char *argv[]){
     struct cluster_t *clusters;
     int temp_c1_index, temp_c2_index;
-    int desired_num_of_clusters;
+    int desired_num_of_clusters = 0;
     float num_of_clusters;
 
     if(!check_arguments(argc, argv, &desired_num_of_clusters)){
