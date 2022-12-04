@@ -11,7 +11,6 @@
 #include <ctype.h>
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
-#include <errno.h>
 
 // gcc -std=c99 -Wall -Wextra -Werror -DNDEBUG cluster.c -o cluster -lm
 // ./cluster SOUBOR 5
@@ -44,6 +43,8 @@
 #define dfloat(f) printf(" - " __FILE__ ":%u: " #f " = %g\n", __LINE__, f)
 
 #endif
+
+#define MAX_LINE_LEGHT 20
 
 /*****************************************************************
  * Deklarace potrebnych datovych typu:
@@ -307,8 +308,8 @@ int validateFile(char *filename){
     if (file == NULL)
         return 0;
 
-    char str_buffer[20];
-    while (fgets(str_buffer, 20, file) != NULL){
+    char str_buffer[MAX_LINE_LEGHT];
+    while (fgets(str_buffer, MAX_LINE_LEGHT, file) != NULL){
         if (strchr(str_buffer, '.') || (occurenceInString(str_buffer, ' ') != 2 && !strchr(str_buffer, '='))){
             fclose(file);
             return 0;
@@ -343,7 +344,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
     // TODO
 
     int num_of_points = 0;
-    char str_buffer[20];
+    char str_buffer[MAX_LINE_LEGHT];
     int loaded_params;
     FILE *file;
     struct obj_t temp_obj;
