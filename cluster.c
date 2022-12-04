@@ -296,6 +296,10 @@ int occurenceInString(char *haystack, char needle){
     return occurencies;
 }
 
+/*
+ Validates file, if exists and if correctly formated returns 1
+ else returns 0
+*/
 int validateFile(char *filename){
     FILE *file;
     file = fopen(filename, "r");
@@ -314,6 +318,9 @@ int validateFile(char *filename){
     return 1;
 }
 
+/*
+ Checks if ids of objects are unique returns 1 if yes otherwise returns 0
+*/
 int uniqueID(struct cluster_t *arr, int arr_len, int id){
     for (int i = 0; i < arr_len; i++){
         if (arr[i].obj->id == id)
@@ -321,6 +328,7 @@ int uniqueID(struct cluster_t *arr, int arr_len, int id){
     }
     return 1;
 }
+
 /*
  Ze souboru 'filename' nacte objekty. Pro kazdy objekt vytvori shluk a ulozi
  jej do pole shluku. Alokuje prostor pro pole vsech shluku a ukazatel na prvni
@@ -336,34 +344,31 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
     int num_of_points = 0;
     char str_buffer[20];
-    // char str_points_buffer[20];
     int loaded_params;
-    // int i;
     FILE *file;
     struct obj_t temp_obj;
-    // Open file
+    
     file = fopen(filename, "r");
-    if (file == NULL) {
-        // Can not open file
+    if (file == NULL) {  // Can not open file
         *arr = NULL;
         return -1;
     }
-    // Read how many points in file
-    fscanf(file, "%s", str_buffer);
-    // Ask if it contains =
-    char *temp = strchr(str_buffer, '=');
+    
+    fscanf(file, "%s", str_buffer); // Read how many points in file
+    char *temp = strchr(str_buffer, '=');  // Ask if it contains =
     if (temp == NULL){  // There is no =
         fclose(file);
         *arr = NULL;
         return -1;
     }
-    num_of_points = atoi(temp + 1);
 
+    num_of_points = atoi(temp + 1);  // Read from position of = + 1 to get only numbers
     if (num_of_points <= 0){ // If atoi does not return valid value
         *arr = NULL;
         fclose(file);
         return -1;
-    }   
+    }
+
     *arr = (struct cluster_t *) malloc(sizeof(struct cluster_t) * num_of_points);
 
     if (arr == NULL){ // No space for malloc
@@ -373,6 +378,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
     for (int i = 0; i < num_of_points; i++){
         loaded_params = fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
+        // Validating parameters
         if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x < 0 || temp_obj.x > 1000 || temp_obj.y < 0 || temp_obj.y > 1000 || temp_obj.id < 0 || !uniqueID(*arr, i, temp_obj.id)){
             fclose(file);
             return -i;
@@ -452,7 +458,7 @@ int main(int argc, char *argv[]){
         return -1;
     }
     
-    while (num_of_clusters != desired_num_of_clusters){
+    while (num_of_clusters != desired_num_of_clusters){  // while desired num of cluster does not equal num of cluster, the find closest neighbours and connect them
         find_neighbours(clusters, num_of_clusters, &temp_c1_index, &temp_c2_index);
         merge_clusters(&clusters[temp_c1_index], &clusters[temp_c2_index]);
         num_of_clusters = remove_cluster(clusters, num_of_clusters, temp_c2_index);
