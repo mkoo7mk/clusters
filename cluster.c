@@ -90,12 +90,12 @@ void init_cluster(struct cluster_t *c, int cap){
     // TODO
     size_t size = sizeof(struct obj_t) * cap;
     void *arr = malloc(size);
-    if (arr == NULL)
-        return;
     c->obj = (struct obj_t*)arr;
     c->size = 0;
     c->capacity = cap;
 
+    if (arr == NULL)
+        return;
 }
 
 /*
@@ -145,6 +145,8 @@ void append_cluster(struct cluster_t *c, struct obj_t obj)
 {
     // TODO
     c = resize_cluster(c, c->size + CLUSTER_CHUNK);
+    if (c == NULL)
+        return;
     c->obj[c->size] = obj;
     c->size++;
 }
