@@ -130,7 +130,7 @@ struct cluster_t *resize_cluster(struct cluster_t *c, int new_cap)
 
     void *arr = realloc(c->obj, size);
     if (arr == NULL)
-        return NULL;
+        return c;
 
     c->obj = (struct obj_t*)arr;
     c->capacity = new_cap;
@@ -187,7 +187,7 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
     assert(narr > 0);
 
     // TODO
-    for (int i = idx; i <= narr - 1; i++){
+    for (int i = idx; i < narr - 1; i++){
         clear_cluster(&carr[i]);
         merge_clusters(&carr[i], &carr[i+1]);
     }
@@ -301,7 +301,7 @@ int validateFile(char *filename){
     file = fopen(filename, "r");
 
     if (file == NULL)
-        return -1;
+        return 0;
 
     char str_buffer[20];
     while (fgets(str_buffer, 20, file) != NULL){
@@ -364,7 +364,8 @@ int load_clusters(char *filename, struct cluster_t **arr)
         fclose(file);
         return -1;
     }   
-    *arr = malloc(sizeof(struct cluster_t) * num_of_points * CLUSTER_CHUNK);
+    *arr = (struct cluster_t *) malloc(sizeof(struct cluster_t) * num_of_points);
+
     if (arr == NULL){ // No space for malloc
         fclose(file);
         return -1;
@@ -373,9 +374,8 @@ int load_clusters(char *filename, struct cluster_t **arr)
     for (int i = 0; i < num_of_points; i++){
         loaded_params = fscanf(file, "%d %g %g", &temp_obj.id, &temp_obj.x, &temp_obj.y);
         if (loaded_params != NUM_OF_OBJ_PARAMS || temp_obj.x < 0 || temp_obj.x > 1000 || temp_obj.y < 0 || temp_obj.y > 1000 || temp_obj.id < 0 || !uniqueID(*arr, i, temp_obj.id)){
-            *arr = NULL;
             fclose(file);
-            return -1;
+            return -i;
         }
         init_cluster(&(*arr)[i], 0);
         append_cluster(&(*arr)[i], temp_obj);
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]){
     struct cluster_t *clusters;
     int temp_c1_index, temp_c2_index;
     int desired_num_of_clusters = 0;
-    float num_of_clusters;
+    float num_of_clusters = 0;
 
     if(!check_arguments(argc, argv, &desired_num_of_clusters)){
         fprintf(stderr, "Invalid arguments\n");
@@ -445,7 +445,7 @@ int main(int argc, char *argv[]){
     num_of_clusters = load_clusters(argv[1], &clusters);
     if (num_of_clusters < 1){
         fprintf(stderr, "Invalid arguments\n");
-        for (int i = 0; i < num_of_clusters; i++){
+        for (int i = 0; i < -num_of_clusters; i++){
             clear_cluster(&clusters[i]);
         }
         free(clusters);
